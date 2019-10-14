@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">GeoPlayer</string>
+    <string name="notif_channel">GeoPlayer Notifications</string>
+    <string name="channel_description">GeoPlayer music player notification</string>
+</resources>
