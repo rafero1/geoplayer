@@ -5,24 +5,32 @@ import android.app.NotificationManager
 import android.content.*
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.os.IBinder
 import android.os.PersistableBundle
-import android.provider.MediaStore.Audio
+import android.provider.MediaStore
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.awareness.Awareness
+import com.google.android.gms.location.ActivityRecognitionResult
+import com.google.android.gms.location.DetectedActivity
+import com.google.android.material.navigation.NavigationView
 
-
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     companion object {
         const val BROADCAST_PLAY_NEW_AUDIO = "br.ufc.smd.geoplayer.PLAY_NEW_AUDIO"
@@ -34,21 +42,89 @@ class MainActivity : AppCompatActivity() {
     var serviceBound = false
     var songList: ArrayList<Song>? = null
 
-
-    ///////////////////////////////////////////
-    /// Lifecycle methods
-    ///////////////////////////////////////////
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
+        val navView: NavigationView = findViewById(R.id.nav_view)
+        val toggle = ActionBarDrawerToggle(
+            this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
+        )
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+
+        navView.setNavigationItemSelectedListener(this)
 
         createNotificationChannel()
 
         if (checkAndRequestPermissions()) {
             loadSongList()
         }
+
+        // Each type of contextual information in the snapshot API has a corresponding "get" method.
+        // For instance, this is how to get the user's current Activity.
+        Awareness.getSnapshotClient(this).detectedActivity
+            .addOnSuccessListener { dar ->
+                val arr: ActivityRecognitionResult = dar.activityRecognitionResult
+
+                // getMostProbableActivity() is good enough for basic Activity detection.
+                // To work within a threshold of confidence,
+                // use ActivityRecognitionResult.getProbableActivities() to get a list of
+                // potential current activities, and check the confidence of each one.
+                val probableActivity: DetectedActivity = arr.mostProbableActivity
+
+                val confidence = probableActivity.confidence
+
+                val activityStr = probableActivity.toString()
+
+                Log.d("MAIN", "Activity: $activityStr, Confidence: $confidence/100")
+            }
+
+    }
+
+    override fun onBackPressed() {
+        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        return when (item.itemId) {
+            R.id.action_settings -> true
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        // Handle navigation view item clicks here.
+        when (item.itemId) {
+            R.id.nav_home -> {
+                val i = Intent(this, MainActivity::class.java)
+                startActivity(i)
+            }
+            R.id.nav_map -> {
+                val i = Intent(this, MapsActivity::class.java)
+                startActivity(i)
+            }
+        }
+        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
+        drawerLayout.closeDrawer(GravityCompat.START)
+        return true
     }
 
     override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
@@ -63,6 +139,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+
         if (serviceBound) {
             unbindService(serviceConnection)
             //service is active
@@ -77,7 +154,7 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun checkAndRequestPermissions(): Boolean {
-        if (SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val permissionReadPhoneState = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_PHONE_STATE)
             val permissionStorage = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
             val listPermissionsNeeded = arrayListOf<String>()
@@ -91,7 +168,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (listPermissionsNeeded.isNotEmpty()) {
-                ActivityCompat.requestPermissions(this, listPermissionsNeeded.toTypedArray(), REQUEST_ID_MULTIPLE_PERMISSIONS)
+                ActivityCompat.requestPermissions(this, listPermissionsNeeded.toTypedArray(),
+                    MainActivity.REQUEST_ID_MULTIPLE_PERMISSIONS
+                )
                 return false
             } else return true
         }
@@ -106,7 +185,7 @@ class MainActivity : AppCompatActivity() {
         val TAG = "LOG_PERMISSION"
         Log.d(TAG, "Permission callback called-------")
         when (requestCode) {
-            REQUEST_ID_MULTIPLE_PERMISSIONS -> {
+            MainActivity.REQUEST_ID_MULTIPLE_PERMISSIONS -> {
 
                 val perms = hashMapOf<String, Int>()
                 // Initialize the map with both permissions
@@ -190,11 +269,11 @@ class MainActivity : AppCompatActivity() {
     private fun createNotificationChannel() {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
-        if (SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.notif_channel)
             val descriptionText = getString(R.string.channel_description)
             val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+            val channel = NotificationChannel(MainActivity.CHANNEL_ID, name, importance).apply {
                 description = descriptionText
             }
             // Register the channel with the system
@@ -215,7 +294,7 @@ class MainActivity : AppCompatActivity() {
         if (!serviceBound) {
             //Store Serializable songList to SharedPreferences
             val storage = StorageUtil(applicationContext)
-            storage.storeSong(songList!!)
+            storage.storeSongs(songList!!)
             storage.storeSongIndex(audioIndex)
 
             val playerIntent = Intent(this, MediaPlayerService::class.java)
@@ -228,7 +307,7 @@ class MainActivity : AppCompatActivity() {
 
             //Service is active
             //Send a broadcast to the service -> PLAY_NEW_AUDIO
-            val broadcastIntent = Intent(BROADCAST_PLAY_NEW_AUDIO)
+            val broadcastIntent = Intent(MainActivity.BROADCAST_PLAY_NEW_AUDIO)
             sendBroadcast(broadcastIntent)
         }
     }
@@ -242,19 +321,19 @@ class MainActivity : AppCompatActivity() {
     private fun loadSongs() {
         val contentResolver = contentResolver
 
-        val uri = Audio.Media.EXTERNAL_CONTENT_URI
-        val selection = Audio.Media.IS_MUSIC + "!= 0"
-        val sortOrder = Audio.Media.TITLE + " ASC"
+        val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        val selection = MediaStore.Audio.Media.IS_MUSIC + "!= 0"
+        val sortOrder = MediaStore.Audio.Media.TITLE + " ASC"
 
         val cursor = contentResolver.query(uri, null, selection, null, sortOrder)
 
         if (cursor != null && cursor.count > 0) {
             songList = ArrayList()
             while (cursor.moveToNext()) {
-                val data = cursor.getString(cursor.getColumnIndex(Audio.Media.DATA))
-                val title = cursor.getString(cursor.getColumnIndex(Audio.Media.TITLE))
-                val album = cursor.getString(cursor.getColumnIndex(Audio.Media.ALBUM))
-                val artist = cursor.getString(cursor.getColumnIndex(Audio.Media.ARTIST))
+                val data = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA))
+                val title = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE))
+                val album = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM))
+                val artist = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST))
 
                 // Save to songList
                 songList?.add(Song(data, title, album, artist))
@@ -265,7 +344,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initRecyclerView() {
         if (songList != null && songList!!.size > 0) {
-            val recyclerView = findViewById<RecyclerView>(R.id.recyclerview)
+            val recyclerView = findViewById<RecyclerView>(R.id.main_rv_songs)
             recyclerView.apply {
                 adapter = SongListAdapter(songList!!, application)
                 layoutManager = LinearLayoutManager(this@MainActivity)

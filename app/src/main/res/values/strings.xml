@@ -2,4 +2,27 @@
     <string name="app_name">GeoPlayer</string>
     <string name="notif_channel">GeoPlayer Notifications</string>
     <string name="channel_description">GeoPlayer music player notification</string>
+
+    <string name="title_activity_playlist">PlaylistActivity</string>
+    <string name="title_activity_maps">Map</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="nav_header_title">GeoPlayer</string>
+    <string name="nav_header_subtitle">Audioplayer contextual</string>
+    <string name="nav_header_desc">Menus</string>
+
+    <string name="action_activate_auto">Ativar serviço</string>
+    <string name="action_deactivate_auto">Desativar serviço</string>
+    <string name="action_new_playlist">Nova playlist</string>
+    <string name="action_edit_playlist">Editar playlist</string>
+    <string name="action_remove_playlist">Remover playlist</string>
+    <string name="action_new_zone">Nova zona</string>
+    <string name="action_edit_zone">Editar zona</string>
+    <string name="action_remove_zone">Remover zona</string>
+
+    <string name="menu_home">Biblioteca</string>
+    <string name="menu_playlists">Playlists</string>
+    <string name="menu_map">Mapa</string>
 </resources>

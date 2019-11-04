@@ -12,6 +12,4 @@ data class Song (
     var title: String,
     var album: String,
     var artist: String
-) : Serializable {
-
-}
+) : Serializable

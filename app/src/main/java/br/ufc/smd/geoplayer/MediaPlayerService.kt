@@ -12,9 +12,8 @@ import android.graphics.BitmapFactory
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.os.Binder
 import android.os.IBinder
-import android.os.IInterface
-import android.os.Parcel
 import android.os.RemoteException
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
@@ -26,7 +25,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.media.MediaSessionManager
-import java.io.FileDescriptor
 import java.io.IOException
 
 
@@ -74,7 +72,7 @@ class MediaPlayerService :
     //List of available Audio files
     private var songList: ArrayList<Song>? = null
     private var songIndex = -1
-    private var activeAudio: Song? = null //an object on the currently playing audio
+    private var activeSong: Song? = null //an object on the currently playing audio
 
     //Handle incoming phone calls
     private var ongoingCall = false
@@ -85,44 +83,8 @@ class MediaPlayerService :
     private var resumePosition: Int = 0
 
     //Binder inner class
-    inner class LocalBinder : IBinder
+    inner class LocalBinder : Binder()
     {
-        override fun getInterfaceDescriptor(): String? {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun isBinderAlive(): Boolean {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun linkToDeath(recipient: IBinder.DeathRecipient, flags: Int) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun queryLocalInterface(descriptor: String): IInterface? {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun transact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun dumpAsync(fd: FileDescriptor, args: Array<String>?) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun dump(fd: FileDescriptor, args: Array<String>?) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun unlinkToDeath(recipient: IBinder.DeathRecipient, flags: Int): Boolean {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun pingBinder(): Boolean {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
         fun getService() : MediaPlayerService
         {
             return this@MediaPlayerService
@@ -255,7 +217,7 @@ class MediaPlayerService :
 
         try {
             // Set the data source to the mediaFile location
-            mediaPlayer?.setDataSource(activeAudio?.data)
+            mediaPlayer?.setDataSource(activeSong?.data)
         } catch (e: IOException) {
             e.printStackTrace()
             stopSelf()
@@ -296,10 +258,10 @@ class MediaPlayerService :
         if (songIndex == songList!!.size - 1) {
             //if last in playlist
             songIndex = 0
-            activeAudio = songList?.get(songIndex)
+            activeSong = songList?.get(songIndex)
         } else {
             //get next in playlist
-            activeAudio = songList?.get(++songIndex)
+            activeSong = songList?.get(++songIndex)
         }
 
         //Update stored index
@@ -317,10 +279,10 @@ class MediaPlayerService :
             //if first in playlist
             //set index to the last of songList
             songIndex = songList!!.size - 1
-            activeAudio = songList?.get(songIndex)
+            activeSong = songList?.get(songIndex)
         } else {
             //get previous in playlist
-            activeAudio = songList?.get(--songIndex)
+            activeSong = songList?.get(--songIndex)
         }
 
         //Update stored index
@@ -435,12 +397,12 @@ class MediaPlayerService :
         try {
             //Load data from SharedPreferences
             val storage = StorageUtil(applicationContext)
-            songList = storage.loadSong()
+            songList = storage.loadSongs()
             songIndex = storage.loadSongIndex()
 
             if (songIndex != -1 && songIndex < songList!!.size) {
                 //index is in a valid range
-                activeAudio = songList?.get(songIndex)
+                activeSong = songList?.get(songIndex)
             } else {
                 stopSelf()
             }
@@ -549,9 +511,9 @@ class MediaPlayerService :
         mediaSession?.setMetadata(
             MediaMetadataCompat.Builder()
                 .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, albumArt)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, activeAudio?.artist)
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, activeAudio?.album)
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, activeAudio?.title)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, activeSong?.artist)
+                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, activeSong?.album)
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, activeSong?.title)
                 .build()
         )
     }
@@ -607,9 +569,9 @@ class MediaPlayerService :
             setSmallIcon(android.R.drawable.stat_sys_headset)
 
             // Set Notification content information
-            setContentText(activeAudio?.artist)
-            setContentTitle(activeAudio?.album)
-            setContentInfo(activeAudio?.title)
+            setContentText(activeSong?.artist)
+            setContentTitle(activeSong?.album)
+            setContentInfo(activeSong?.title)
 
             // Add playback actions
             addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))
@@ -682,7 +644,7 @@ class MediaPlayerService :
             songIndex = StorageUtil(applicationContext).loadSongIndex()
             if (songIndex != -1 && songIndex < songList!!.size) {
                 //index is in a valid range
-                activeAudio = songList?.get(songIndex)
+                activeSong = songList?.get(songIndex)
             } else {
                 stopSelf()
             }

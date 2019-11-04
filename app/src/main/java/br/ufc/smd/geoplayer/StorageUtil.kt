@@ -16,9 +16,8 @@ class StorageUtil(private val context: Context) {
     private val STORAGE = "br.ufc.smd.geoplayer.STORAGE"
     private var preferences: SharedPreferences? = null
 
-    fun storeSong(arrayList: ArrayList<Song>) {
+    fun storeSongs(arrayList: ArrayList<Song>) {
         preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE)
-
         val editor = preferences!!.edit()
         val gson = Gson()
         val json = gson.toJson(arrayList)
@@ -26,14 +25,12 @@ class StorageUtil(private val context: Context) {
         editor.apply()
     }
 
-    fun loadSong(): ArrayList<Song> {
+    fun loadSongs(): ArrayList<Song> {
         preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE)
         val gson = Gson()
         val json = preferences!!.getString("audioArrayList", null)
-        val type = object : TypeToken<ArrayList<Song>>() {
-
-        }.type
-        return gson.fromJson(json, type)
+        val type = object : TypeToken<ArrayList<Song>>() {}.type
+        return gson.fromJson(json, type) ?: arrayListOf()
     }
 
     fun storeSongIndex(index: Int) {
@@ -45,7 +42,7 @@ class StorageUtil(private val context: Context) {
 
     fun loadSongIndex(): Int {
         preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE)
-        return preferences!!.getInt("songIndex", -1)//return -1 if no data found
+        return preferences!!.getInt("songIndex", -1) //return -1 if no data is found
     }
 
     fun clearCachedSongPlaylist() {
@@ -53,5 +50,37 @@ class StorageUtil(private val context: Context) {
         val editor = preferences!!.edit()
         editor.clear()
         editor.apply()
+    }
+
+
+
+    fun storeZones(arrayList: ArrayList<Zone>) {
+        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE)
+        val editor = preferences!!.edit()
+        val gson = Gson()
+        val json = gson.toJson(arrayList)
+        editor.putString("zoneArrayList", json)
+        editor.apply()
+    }
+
+    fun loadZones() : ArrayList<Zone> {
+        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE)
+        val gson = Gson()
+        val json = preferences!!.getString("zoneArrayList", null)
+        val type = object : TypeToken<ArrayList<Zone>>() {}.type
+        return gson.fromJson(json, type) ?: arrayListOf()
+    }
+
+    fun loadZone(index: Int): Zone {
+        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE)
+        val zones = loadZones()
+        return zones[index]
+    }
+
+    fun updateZone(index: Int, zone: Zone) {
+        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE)
+        val zones = loadZones()
+        zones[index] = zone
+        storeZones(zones)
     }
 }
