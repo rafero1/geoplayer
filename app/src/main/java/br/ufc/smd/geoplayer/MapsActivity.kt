@@ -16,7 +16,6 @@ import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -67,30 +66,43 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             createNewZoneActivity(newZone)
         }
 
-        model.zones.forEach { zone ->
-            addZoneToMap(zone)
+        displayZones()
+    }
+
+    private fun displayZones () {
+        model.zones.forEachIndexed { index, zone ->
+            addZoneToMap(index, zone)
             Log.d("MAPS", zone.playlist.name + " " + zone.latLng().toString() + " - " + zone.playlist.songs.toString())
         }
     }
 
-    private fun addZoneToMap(zone: Zone) {
+    private fun addZoneToMap(index: Int, zone: Zone) {
         mMap.apply {
             addMarker(MarkerOptions()
                 .position(zone.latLng())
                 .title(zone.playlist.name)
-            )
+            ).tag = index
             addCircle(CircleOptions()
                 .center(zone.latLng())
                 .radius(zone.radius)
                 .fillColor(Color.argb(180, 200, 115, 115))
                 .strokeColor(Color.rgb(200, 115, 115))
             )
+            setOnInfoWindowClickListener { marker ->
+                createNewZoneActivity(model.zones[marker.tag as Int])
+            }
         }
     }
 
     private fun createNewZoneActivity(newZone: Zone) {
         val i = Intent(this, ZoneEditorActivity::class.java)
-        i.putExtra(LOCATION_EXTRA, doubleArrayOf(newZone.lat, newZone.lon))
+        val gson = Gson()
+        val json = gson.toJson(newZone)
+        i.apply {
+            //putExtra(LOCATION_EXTRA, doubleArrayOf(newZone.lat, newZone.lon))
+            putExtra(LOCATION_EXTRA, json)
+        }
+
         startActivityForResult(i, CREATE_ZONE)
     }
 
@@ -99,12 +111,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         if (requestCode == CREATE_ZONE) {
             if (resultCode == Activity.RESULT_OK) {
-                val gson = Gson()
-                val type = object : TypeToken<Zone>() {}.type
-                val newZone = gson.fromJson<Zone>(data!!.getStringExtra("br.ufc.smd.geoplayer.newZone")!!, type)
-                addZoneToMap(newZone)
-                Toast.makeText(this, newZone.playlist.name + " criada com sucesso!", Toast.LENGTH_SHORT).show()
-                Log.d("MAPS", "added: " + newZone.playlist.name + " " + newZone.latLng().toString() + " - " + newZone.playlist.songs.toString())
+                mMap.clear()
+                model.loadZones()
+                displayZones()
             }
         }
     }

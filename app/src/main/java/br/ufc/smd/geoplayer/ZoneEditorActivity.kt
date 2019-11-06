@@ -29,10 +29,17 @@ class ZoneEditorActivity : AppCompatActivity() {
         model = ViewModelProviders.of(this)[ZoneEditorViewModel::class.java]
 
         setTitle("Criar nova Zona")
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val local_extra = intent.getDoubleArrayExtra(MapsActivity.LOCATION_EXTRA)
-        val location = LatLng(local_extra[0], local_extra[1])
-        edit_zone_tv_location.text = location.toString()
+
+        val gson = Gson()
+        val json = intent.getStringExtra(MapsActivity.LOCATION_EXTRA)
+        val type = object : TypeToken<Zone>() {}.type
+        zone = gson.fromJson(json, type)
+
+        edit_zone_tv_location.text = zone.latLng().toString()
+        edit_zone_tv_name.setText(zone.playlist.name)
+        edit_zone_tv_radius.setText(zone.radius.toString())
 
         val storage = StorageUtil(this)
         val allSongs = storage.loadSongs()
@@ -65,20 +72,27 @@ class ZoneEditorActivity : AppCompatActivity() {
 
             val songList: ArrayList<Song> = (recyclerView.adapter as EditSongListAdapter).checked
 
-            zone.latLng(location)
-            zone.radius = edit_zone_tv_radius.text.toString().toDouble()
-            zone.playlist = Playlist(edit_zone_tv_name.text.toString(), songList)
+            val updatedZone = zone
+            updatedZone.radius = edit_zone_tv_radius.text.toString().toDouble()
+            updatedZone.playlist = Playlist(edit_zone_tv_name.text.toString(), songList)
 
-            //if (zones.contains(zone)) {
-            //    storage.updateZone(zones.indexOf(zone), zone)
-            //} else  {
-                zones.add(zone)
+            if (zones.isEmpty()) {
+                zones.add(updatedZone)
                 storage.storeZones(zones)
-            //}
+            } else {
+                zones.forEachIndexed { index, currentZone ->
+                    if (currentZone.id == zone.id) {
+                        storage.updateZone(index, updatedZone)
+                    } else if (currentZone == zones.last()) {
+                        zones.add(updatedZone)
+                        storage.storeZones(zones)
+                    }
+                }
+            }
 
             val gson = Gson()
             val type = object : TypeToken<Zone>() {}.type
-            val newZone = gson.toJson(zone, type)
+            val newZone = gson.toJson(updatedZone, type)
             val i = Intent()
             i.putExtra("br.ufc.smd.geoplayer.newZone", newZone)
             setResult(Activity.RESULT_OK, i)

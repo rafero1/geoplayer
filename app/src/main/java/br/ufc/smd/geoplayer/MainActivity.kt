@@ -1,7 +1,9 @@
 package br.ufc.smd.geoplayer
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.*
 import android.content.pm.PackageManager
 import android.os.Build
@@ -26,9 +28,10 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.awareness.Awareness
-import com.google.android.gms.location.ActivityRecognitionResult
-import com.google.android.gms.location.DetectedActivity
+import com.google.android.gms.awareness.fence.FenceUpdateRequest
+import com.google.android.gms.awareness.fence.LocationFence
 import com.google.android.material.navigation.NavigationView
+
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -42,6 +45,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var serviceBound = false
     var songList: ArrayList<Song>? = null
 
+    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -64,25 +68,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             loadSongList()
         }
 
-        // Each type of contextual information in the snapshot API has a corresponding "get" method.
-        // For instance, this is how to get the user's current Activity.
-        Awareness.getSnapshotClient(this).detectedActivity
-            .addOnSuccessListener { dar ->
-                val arr: ActivityRecognitionResult = dar.activityRecognitionResult
-
-                // getMostProbableActivity() is good enough for basic Activity detection.
-                // To work within a threshold of confidence,
-                // use ActivityRecognitionResult.getProbableActivities() to get a list of
-                // potential current activities, and check the confidence of each one.
-                val probableActivity: DetectedActivity = arr.mostProbableActivity
-
-                val confidence = probableActivity.confidence
-
-                val activityStr = probableActivity.toString()
-
-                Log.d("MAIN", "Activity: $activityStr, Confidence: $confidence/100")
-            }
-
+        // Register fence
+        val fc = Awareness.getFenceClient(this)
+        val builder = FenceUpdateRequest.Builder()
+        val zones = StorageUtil(this).loadZones()
+        registerReceiver(ZoneFenceReceiver(), IntentFilter("geofence"))
+        val pi = PendingIntent.getBroadcast(this,123, Intent("geofence"), PendingIntent.FLAG_CANCEL_CURRENT)
+        zones.forEach { zone ->
+            val geofence = LocationFence.`in`(zone.lat, zone.lon, zone.radius, 5L)
+            builder.addFence("geofence ${zone.playlist.name}", geofence, pi)
+        }
+        fc.updateFences(builder.build())
     }
 
     override fun onBackPressed() {
@@ -272,8 +268,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.notif_channel)
             val descriptionText = getString(R.string.channel_description)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(MainActivity.CHANNEL_ID, name, importance).apply {
+            val importance = NotificationManager.IMPORTANCE_LOW
+            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
             }
             // Register the channel with the system
@@ -307,7 +303,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             //Service is active
             //Send a broadcast to the service -> PLAY_NEW_AUDIO
-            val broadcastIntent = Intent(MainActivity.BROADCAST_PLAY_NEW_AUDIO)
+            val broadcastIntent = Intent(BROADCAST_PLAY_NEW_AUDIO)
             sendBroadcast(broadcastIntent)
         }
     }
@@ -340,6 +336,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         }
         cursor?.close()
+        StorageUtil(this).storeSongs(songList!!)
     }
 
     private fun initRecyclerView() {

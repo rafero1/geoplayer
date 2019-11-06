@@ -106,9 +106,13 @@ class MediaPlayerService :
         //Invoked when playback of a media source has completed.
         stopMedia()
 
-        removeNotification()
-        //Stops the service
-        stopSelf()
+        if (songIndex == songList?.size) {
+            removeNotification()
+            //Stops the service
+            stopSelf()
+        } else {
+            skipToNext()
+        }
     }
 
     //Handle errors

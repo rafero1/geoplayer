@@ -4,10 +4,19 @@ import com.google.android.gms.maps.model.LatLng
 import java.io.Serializable
 
 class Zone : Serializable {
+    val id: Int
     var lat: Double = 0.0
     var lon: Double = 0.0
     var radius: Double = 200.0
     var playlist: Playlist
+
+    init {
+        id = staticId++
+    }
+
+    private companion object {
+        var staticId = 0
+    }
 
     constructor(latitude: Double, longitude: Double, playlist: Playlist) {
         this.lat = latitude
