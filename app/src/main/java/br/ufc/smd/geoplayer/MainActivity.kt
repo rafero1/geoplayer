@@ -27,13 +27,23 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.gms.awareness.Awareness
-import com.google.android.gms.awareness.fence.FenceUpdateRequest
-import com.google.android.gms.awareness.fence.LocationFence
+
+import com.google.android.gms.awareness.Awareness;
+import com.google.android.gms.awareness.FenceClient;
+import com.google.android.gms.awareness.fence.AwarenessFence;
+import com.google.android.gms.awareness.fence.DetectedActivityFence;
+import com.google.android.gms.awareness.fence.FenceUpdateRequest;
+import com.google.android.gms.awareness.fence.HeadphoneFence;
+import com.google.android.gms.awareness.fence.LocationFence;
+import com.google.android.gms.awareness.state.HeadphoneState;
+
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
+
 import com.google.android.material.navigation.NavigationView
 
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener{
 
     companion object {
         const val BROADCAST_PLAY_NEW_AUDIO = "br.ufc.smd.geoplayer.PLAY_NEW_AUDIO"
@@ -57,6 +67,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val toggle = ActionBarDrawerToggle(
             this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
+
+        //FENCE DE HEADPHONE
+
+
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
@@ -153,6 +167,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val permissionReadPhoneState = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_PHONE_STATE)
             val permissionStorage = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            val permissionLocation = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
             val listPermissionsNeeded = arrayListOf<String>()
 
             if (permissionReadPhoneState != PackageManager.PERMISSION_GRANTED) {
@@ -161,6 +176,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             if (permissionStorage != PackageManager.PERMISSION_GRANTED) {
                 listPermissionsNeeded.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+
+            if (permissionLocation != PackageManager.PERMISSION_GRANTED) {
+                listPermissionsNeeded.add(android.Manifest.permission.ACCESS_FINE_LOCATION)
             }
 
             if (listPermissionsNeeded.isNotEmpty()) {
