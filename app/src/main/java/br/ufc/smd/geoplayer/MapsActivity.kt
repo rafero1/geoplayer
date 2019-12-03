@@ -1,10 +1,13 @@
 package br.ufc.smd.geoplayer
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -50,10 +53,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //Deve ter algo errado nessa declaração
     var myLocation: Location
         get() = myLocation
-        set(value:Location) {
+        set(value) {
             this.myLocation.latitude = value.latitude
             this.myLocation.longitude = value.longitude
         }
+
+
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,21 +80,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             val headphone = HeadphoneFence.during(HeadphoneState.PLUGGED_IN)
 
-            Awareness.getSnapshotClient(this).location
-                .addOnSuccessListener(object : OnSuccessListener<LocationResponse> {
-                    override fun onSuccess(locationResponse: LocationResponse) {
-                        Log.v("test", locationResponse.location.toString())
 
-                        //Eu quero a localização aqui, mas tá crashando
-                        //myLocation.set(locationResponse.location)
 
-                    }
-                })
-                .addOnFailureListener(object : OnFailureListener {
-                    override fun onFailure(ex: Exception) {
-                        Log.e("test", "onFailure(): " + ex)
-                    }
-                })
         }
     }
 
@@ -106,14 +99,36 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             == PackageManager.PERMISSION_GRANTED) {
             mMap = googleMap
 
-            //DEPRECADO
-            //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(-3.706558, -38.563641), 15f))
-            //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(Awareness.getSnapshotClient(this).location.))
+            // Acquire a reference to the system Location Manager
+            val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val locationProvider: String = LocationManager.NETWORK_PROVIDER
+            val lastKnownLocation: Location = locationManager.getLastKnownLocation(locationProvider)
 
-            //TEM ALGO ERRADO NO MYLOCATION, mas é meio que isso aqui
-            //val mylocation = Awareness.getSnapshotClient(this).location
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lastKnownLocation.latitude, lastKnownLocation.longitude), 15f))
+               // Define a listener that responds to location updates
+               val locationListener = object : LocationListener {
 
-            //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(myLocation.latitude, myLocation.longitude), 15f))
+                   override fun onLocationChanged(location: Location) {
+                       // Called when a new location is found by the network location provider.
+                       //if (location != null)
+                           //text.setText(lastKnownLocation.toString())
+
+                   }
+
+                   override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
+                   }
+
+                   override fun onProviderEnabled(provider: String) {
+                   }
+
+                   override fun onProviderDisabled(provider: String) {
+                   }
+               }
+
+           // Register the listener with the Location Manager to receive location updates
+           locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0f, locationListener)
+
+
 
             mMap.setOnMapClickListener {
                 Toast.makeText(this, "Segure para criar uma zona", Toast.LENGTH_SHORT).show()
@@ -127,23 +142,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             //Desliga rotação via gesto
             mMap.uiSettings.setRotateGesturesEnabled(false)
 
-            //Adiciona o botão de minha localização
+            //Adiciona o botão de minha localizaçãot
             mMap.setMyLocationEnabled(true);
 
             //Adiciona o listener do ponto azul no mapa
-            mMap.setOnMyLocationClickListener{
-                true
+            mMap.setOnMyLocationClickListener{position ->
+                val newZone = Zone(LatLng(position.latitude, position.longitude))
+                createNewZoneActivity(newZone)
             }
-            //mMap.setOnMyLocationClickListener{
-              //  true
-            //}
 
             //Seta o callback do botão de minha localização (false é pra ele centralizar no usuário)
             mMap.setOnMyLocationButtonClickListener{
                 false
             }
-
-            //mMap.setonmy
 
             displayZones()
         }
@@ -218,5 +229,47 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         false
     }
 
+    /*private fun startSnapshot(): Location {
+        //val myLocation: Location
+        var snapshotClient = Awareness.getSnapshotClient(this)
 
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED)
+        {
+
+            snapshotClient.location
+                .addOnSuccessListener(object : OnSuccessListener<LocationResponse> {
+                    override fun onSuccess(locationResponse: LocationResponse) {
+                        Log.v("test", locationResponse.location.toString())
+                        if (locationResponse.location != null) {
+                            //Eu quero a localização aqui, mas tá crashando
+                            //myLocation?.latitude = locationResponse.location.latitude
+                            //myLocation?.longitude = locationResponse.location.longitude
+                            myLocation = locationResponse.location
+
+                        }
+
+                        //Log.v("test2", myLocation?.toString())
+                    }
+                })
+
+            /*.addOnFailureListener(object : OnFailureListener
+            {
+                override fun onFailure(ex: Exception)
+                {
+                    Log.e("test", "onFailure(): " + ex)
+                    return
+                }
+            })*/
+        }*/
+
+
+        private val locationListener: LocationListener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                //thetext.setText("" + location.longitude + ":" + location.latitude);
+            }
+            override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
+            override fun onProviderEnabled(provider: String) {}
+            override fun onProviderDisabled(provider: String) {}
+        }
 }
