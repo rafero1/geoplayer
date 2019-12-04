@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             if (listPermissionsNeeded.isNotEmpty()) {
                 ActivityCompat.requestPermissions(this, listPermissionsNeeded.toTypedArray(),
-                    MainActivity.REQUEST_ID_MULTIPLE_PERMISSIONS
+                    REQUEST_ID_MULTIPLE_PERMISSIONS
                 )
                 return false
             } else return true
@@ -181,7 +181,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val TAG = "LOG_PERMISSION"
         Log.d(TAG, "Permission callback called-------")
         when (requestCode) {
-            MainActivity.REQUEST_ID_MULTIPLE_PERMISSIONS -> {
+            REQUEST_ID_MULTIPLE_PERMISSIONS -> {
 
                 val perms = hashMapOf<String, Int>()
                 // Initialize the map with both permissions
