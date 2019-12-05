@@ -125,6 +125,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 //val i = Intent(this, MainActivity::class.java)
                 //startActivity(i)
             }
+
+            /*R.id.nav_playlist -> {
+                val i = Intent(this, PlaylistActivity::class.java)
+                startActivity(i)
+            }*/
+
             R.id.nav_map -> {
                 val i = Intent(this, MapsActivity::class.java)
                 startActivity(i)
@@ -153,7 +159,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (serviceBound) {
             unbindService(serviceConnection)
             //service is active
-            player?.stopSelf()
+            //player?.stopSelf()
         }
     }
 
@@ -315,7 +321,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             //Store Serializable songList to SharedPreferences
             val storage = StorageUtil(applicationContext)
             storage.storeSongs(songList!!)
-            storage.storeEnqueuedSongs(songList!!)
+            if (StorageUtil(applicationContext).loadEnqueuedSongs().isNullOrEmpty())
+                storage.storeEnqueuedSongs(songList!!)
             storage.storeSongIndex(audioIndex)
 
             val playerIntent = Intent(this, MediaPlayerService::class.java)

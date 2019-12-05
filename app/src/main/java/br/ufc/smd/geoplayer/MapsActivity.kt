@@ -14,6 +14,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProviders
+import com.google.android.gms.awareness.fence.HeadphoneFence
+import com.google.android.gms.awareness.fence.LocationFence
+import com.google.android.gms.awareness.state.HeadphoneState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -22,21 +25,6 @@ import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.gson.Gson
-
-import com.google.android.gms.awareness.Awareness;
-import com.google.android.gms.awareness.FenceClient;
-import com.google.android.gms.awareness.fence.AwarenessFence;
-import com.google.android.gms.awareness.fence.DetectedActivityFence;
-import com.google.android.gms.awareness.fence.FenceUpdateRequest;
-import com.google.android.gms.awareness.fence.HeadphoneFence;
-import com.google.android.gms.awareness.fence.LocationFence;
-import com.google.android.gms.awareness.state.HeadphoneState;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-
-import br.ufc.smd.geoplayer.NotificationAction;
-import com.google.android.gms.awareness.SnapshotClient
-import com.google.android.gms.awareness.snapshot.LocationResponse
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -102,33 +90,40 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             // Acquire a reference to the system Location Manager
             val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
             val locationProvider: String = LocationManager.NETWORK_PROVIDER
-            val lastKnownLocation: Location = locationManager.getLastKnownLocation(locationProvider)
+            val lastKnownLocation: Location? = locationManager.getLastKnownLocation(locationProvider)
 
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lastKnownLocation.latitude, lastKnownLocation.longitude), 15f))
-               // Define a listener that responds to location updates
-               val locationListener = object : LocationListener {
+            if (lastKnownLocation != null) {
+                mMap.moveCamera(
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(
+                            lastKnownLocation.latitude,
+                            lastKnownLocation.longitude
+                        ), 15f
+                    )
+                )
+                // Define a listener that responds to location updates
+                val locationListener = object : LocationListener {
 
-                   override fun onLocationChanged(location: Location) {
-                       // Called when a new location is found by the network location provider.
-                       //if (location != null)
-                           //text.setText(lastKnownLocation.toString())
+                    override fun onLocationChanged(location: Location) {
+                        // Called when a new location is found by the network location provider.
+                        //if (location != null)
+                        //text.setText(lastKnownLocation.toString())
 
-                   }
+                    }
 
-                   override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
-                   }
+                    override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
+                    }
 
-                   override fun onProviderEnabled(provider: String) {
-                   }
+                    override fun onProviderEnabled(provider: String) {
+                    }
 
-                   override fun onProviderDisabled(provider: String) {
-                   }
-               }
+                    override fun onProviderDisabled(provider: String) {
+                    }
+                }
+            }
 
            // Register the listener with the Location Manager to receive location updates
            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0f, locationListener)
-
-
 
             mMap.setOnMapClickListener {
                 Toast.makeText(this, "Segure para criar uma zona", Toast.LENGTH_SHORT).show()
@@ -163,7 +158,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun displayZones () {
         model.zones.forEachIndexed { index, zone ->
             addZoneToMap(index, zone)
-            Log.d("MAPS", zone.playlist.name + " " + zone.latLng().toString() + " - " + zone.playlist.songs.toString())
+            Log.d("DEBUG", "[${zone.id}] " + zone.playlist.name + "(${zone.fenceId})" + " " + zone.latLng().toString())
         }
     }
 

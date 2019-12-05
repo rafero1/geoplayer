@@ -8,66 +8,76 @@
         tools:context=".ZoneEditorActivity">
 
     <EditText
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:inputType="text"
-            android:ems="10"
+            android:ems="5"
             android:id="@+id/edit-zone-tv-name"
             app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="16dp"
-            app:layout_constraintTop_toBottomOf="@+id/textView3" android:layout_marginTop="8dp"
-    />
+            app:layout_constraintTop_toBottomOf="@+id/textView3"
+            android:textSize="14sp" android:layout_marginEnd="16dp"
+            app:layout_constraintEnd_toStartOf="@+id/edit-zone-tv-radius"/>
     <androidx.recyclerview.widget.RecyclerView
             android:layout_width="0dp"
             android:layout_height="0dp" app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginEnd="16dp"
             app:layout_constraintTop_toBottomOf="@+id/textView2" app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="16dp" android:layout_marginTop="8dp" android:id="@+id/edit-zone-rv-songs"
-            android:layout_marginBottom="16dp" app:layout_constraintBottom_toTopOf="@+id/edit-zone-btn-ok"
-            tools:itemCount="90" tools:listitem="@layout/song_selectable_item_layout"/>
+            android:id="@+id/edit-zone-rv-songs"
+            app:layout_constraintBottom_toTopOf="@+id/edit-zone-btn-ok"
+            tools:itemCount="90" tools:listitem="@layout/song_selectable_item_layout"
+            app:layout_constraintHorizontal_bias="0.0" android:layout_marginBottom="8dp"
+            android:backgroundTint="#00742121"/>
     <TextView
             android:text="Músicas selecionadas"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/textView2" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="24dp"
-            app:layout_constraintTop_toBottomOf="@+id/edit-zone-tv-radius"/>
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@+id/edit-zone-tv-radius"
+            app:layout_constraintBottom_toTopOf="@+id/edit-zone-rv-songs" android:layout_marginBottom="16dp"/>
     <TextView
             android:text="Nome da zona"
             android:layout_width="wrap_content"
             android:layout_height="20dp"
             android:id="@+id/textView3" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginStart="16dp"
-            app:layout_constraintTop_toBottomOf="@+id/edit-zone-tv-location" android:layout_marginTop="16dp"/>
+            android:layout_marginTop="16dp" app:layout_constraintTop_toTopOf="parent"/>
     <TextView
             android:text="Raio (m)"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/textView4" app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="16dp" android:layout_marginTop="24dp"
-            app:layout_constraintTop_toBottomOf="@+id/edit-zone-tv-name"/>
+            android:id="@+id/textView4"
+            app:layout_constraintStart_toStartOf="@+id/edit-zone-tv-radius" app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginTop="16dp"/>
     <EditText
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:inputType="numberDecimal"
-            android:ems="10"
-            android:id="@+id/edit-zone-tv-radius" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/textView4" app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="16dp"/>
+            android:ems="5"
+            android:id="@+id/edit-zone-tv-radius"
+            app:layout_constraintTop_toBottomOf="@+id/textView4"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="16dp" android:textSize="14sp"/>
     <Button
             android:text="Salvar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="100dp"
+            android:layout_height="49dp"
             app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="16dp"
             android:id="@+id/edit-zone-btn-ok" app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginEnd="16dp" style="@style/Widget.AppCompat.Button"/>
+            android:layout_marginEnd="16dp" style="@style/Widget.AppCompat.Button"
+            android:backgroundTint="@color/colorPrimary"
+            android:textColor="@color/common_google_signin_btn_text_dark_default"
+            app:layout_constraintTop_toBottomOf="@+id/edit-zone-rv-songs"
+    />
     <TextView
             android:text="0, 0"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:id="@+id/edit-zone-tv-location"
-            app:layout_constraintTop_toTopOf="parent" android:layout_marginTop="16dp"
-            android:textAlignment="textEnd"
-            android:layout_marginStart="16dp" app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginEnd="24dp" app:layout_constraintEnd_toEndOf="parent" android:ellipsize="end"/>
+            android:textAlignment="textStart"
+            android:ellipsize="end"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginBottom="31dp"
+            app:layout_constraintBottom_toBottomOf="parent" android:layout_marginEnd="16dp"
+            app:layout_constraintEnd_toStartOf="@+id/edit-zone-btn-ok"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

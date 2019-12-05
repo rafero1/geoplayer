@@ -19,6 +19,9 @@ class ZoneFenceReceiver : BroadcastReceiver() {
         if (context != null)
             fences = StorageUtil(context).loadFences()
 
+        var outside = true
+        var songs = arrayListOf<Song>()
+
         fences.forEach { fenceName ->
             if (TextUtils.equals(fenceState.fenceKey, fenceName)) {
                 val fenceStateStr: String
@@ -32,12 +35,26 @@ class ZoneFenceReceiver : BroadcastReceiver() {
                 Toast.makeText(context, "Fence $fenceName : $fenceStateStr", Toast.LENGTH_SHORT).show()
 
                 if (fenceStateStr == "true") {
+                    outside = false
                     if (context != null) {
                         val nextSongs = StorageUtil(context).loadZone(fenceName)?.playlist?.songs
                         if (nextSongs != null)
-                            StorageUtil(context).storeEnqueuedSongs(nextSongs)
+                            songs.addAll(nextSongs)
                     }
                 }
+            }
+        }
+
+        if (outside) {
+            if (context != null) {
+                val nextSongs = StorageUtil(context).loadSongs()
+                StorageUtil(context).storeEnqueuedSongs(nextSongs)
+                Log.d("DEBUG", "outside all zones")
+            }
+        } else {
+            if (context != null) {
+                if (!songs.isEmpty())
+                    StorageUtil(context).storeEnqueuedSongs(songs)
             }
         }
     }

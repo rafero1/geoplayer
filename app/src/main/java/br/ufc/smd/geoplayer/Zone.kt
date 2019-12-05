@@ -8,12 +8,12 @@ class Zone : Serializable {
     var lat: Double = 0.0
     var lon: Double = 0.0
     var radius: Double = 200.0
-    var playlist: Playlist
+    var playlist: PlaylistActivity
     var fenceId: String = ""
 
     init {
-        this.id = staticId++
-
+        this.id = staticId
+        staticId += 1
         this.fenceId = "geofence-" + this.id
     }
 
@@ -21,7 +21,7 @@ class Zone : Serializable {
         var staticId = 0
     }
 
-    constructor(latitude: Double, longitude: Double, playlist: Playlist) {
+    constructor(latitude: Double, longitude: Double, playlist: PlaylistActivity) {
         this.lat = latitude
         this.lon = longitude
         this.playlist = playlist
@@ -30,7 +30,7 @@ class Zone : Serializable {
     constructor(latLng: LatLng) {
         lat = latLng.latitude
         lon = latLng.longitude
-        playlist = Playlist()
+        playlist = PlaylistActivity()
     }
 
     /**

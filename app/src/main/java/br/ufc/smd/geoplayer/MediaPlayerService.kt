@@ -206,14 +206,25 @@ class MediaPlayerService :
     ///////////////////////////////////////////
 
     private fun updateSongList(newSongs: ArrayList<Song>) {
-        songList = newSongs
+        songList?.clear()
+        songList?.addAll(newSongs)
     }
 
     private fun refreshSongList() {
         val storedSongs = StorageUtil(applicationContext).loadEnqueuedSongs()
-        if (songList != storedSongs) {
+
+        Log.d("DEBUG", "attempting song queue refresh...")
+        Log.d("DEBUG", "current song queue: $songList")
+        Log.d("DEBUG", "new song queue: $storedSongs")
+
+        if (songList != null &&
+            songList!!.containsAll(storedSongs) &&
+            songList?.size == storedSongs.size
+        ) { } else {
             updateSongList(storedSongs)
             songIndex = 0
+            StorageUtil(applicationContext).storeSongIndex(0)
+            Log.d("DEBUG", "refreshed song queue")
         }
     }
 
@@ -297,6 +308,8 @@ class MediaPlayerService :
     }
 
     private fun skipToPrevious() {
+
+        refreshSongList()
 
         if (songIndex == 0) {
             //if first in playlist
@@ -593,8 +606,8 @@ class MediaPlayerService :
 
             // Set Notification content information
             setContentText(activeSong?.artist)
-            setContentTitle(activeSong?.album)
-            setContentInfo(activeSong?.title)
+            setContentTitle(activeSong?.title)
+            setContentInfo(activeSong?.album)
 
             // Add playback actions
             addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))

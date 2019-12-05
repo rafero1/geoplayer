@@ -1,6 +1,6 @@
 package br.ufc.smd.geoplayer
 
-class Playlist (var name: String) {
+class PlaylistActivity (var name: String) {
     var songs: ArrayList<Song> = arrayListOf()
 
     constructor() : this("Empty playlist")
