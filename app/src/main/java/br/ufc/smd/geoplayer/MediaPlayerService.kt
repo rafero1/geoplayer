@@ -106,6 +106,12 @@ class MediaPlayerService :
         //Invoked when playback of a media source has completed.
         stopMedia()
 
+        val storedSongs = StorageUtil(applicationContext).loadSongs()
+        if (songList != storedSongs) {
+            updateSongList(storedSongs)
+            songIndex = 0
+        }
+
         if (songIndex == songList?.size) {
             removeNotification()
             //Stops the service
@@ -199,6 +205,17 @@ class MediaPlayerService :
     /// Playback
     ///////////////////////////////////////////
 
+    private fun updateSongList(newSongs: ArrayList<Song>) {
+        songList = newSongs
+    }
+
+    private fun refreshSongList() {
+        val storedSongs = StorageUtil(applicationContext).loadEnqueuedSongs()
+        if (songList != storedSongs) {
+            updateSongList(storedSongs)
+            songIndex = 0
+        }
+    }
 
     private fun initMediaPlayer() {
         mediaPlayer = MediaPlayer()
@@ -258,6 +275,8 @@ class MediaPlayerService :
     }
 
     private fun skipToNext() {
+
+        refreshSongList()
 
         if (songIndex == songList!!.size - 1) {
             //if last in playlist

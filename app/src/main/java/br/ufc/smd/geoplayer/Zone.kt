@@ -4,14 +4,17 @@ import com.google.android.gms.maps.model.LatLng
 import java.io.Serializable
 
 class Zone : Serializable {
-    val id: Int
+    var id: Int = 0
     var lat: Double = 0.0
     var lon: Double = 0.0
     var radius: Double = 200.0
     var playlist: Playlist
+    var fenceId: String = ""
 
     init {
-        id = staticId++
+        this.id = staticId++
+
+        this.fenceId = "geofence-" + this.id
     }
 
     private companion object {

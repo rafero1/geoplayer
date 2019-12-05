@@ -6,9 +6,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.*
 import android.content.pm.PackageManager
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -18,7 +15,6 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
@@ -31,21 +27,10 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-
-import com.google.android.gms.awareness.Awareness;
-import com.google.android.gms.awareness.FenceClient;
-import com.google.android.gms.awareness.fence.AwarenessFence;
-import com.google.android.gms.awareness.fence.DetectedActivityFence;
-import com.google.android.gms.awareness.fence.FenceUpdateRequest;
-import com.google.android.gms.awareness.fence.HeadphoneFence;
-import com.google.android.gms.awareness.fence.LocationFence;
-import com.google.android.gms.awareness.state.HeadphoneState;
-
-import com.google.android.gms.tasks.OnFailureListener
-import com.google.android.gms.tasks.OnSuccessListener
-
+import com.google.android.gms.awareness.Awareness
+import com.google.android.gms.awareness.fence.FenceUpdateRequest
+import com.google.android.gms.awareness.fence.LocationFence
 import com.google.android.material.navigation.NavigationView
-import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener{
@@ -59,6 +44,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var player: MediaPlayerService? = null
     var serviceBound = false
     var songList: ArrayList<Song>? = null
+    var receiver: ZoneFenceReceiver? = null
 
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,7 +62,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         //FENCE DE HEADPHONE
 
-
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
@@ -92,12 +77,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val fc = Awareness.getFenceClient(this)
         val builder = FenceUpdateRequest.Builder()
         val zones = StorageUtil(this).loadZones()
-        registerReceiver(ZoneFenceReceiver(), IntentFilter("geofence"))
+        receiver = ZoneFenceReceiver()
+        registerReceiver(receiver, IntentFilter("geofence"))
         val pi = PendingIntent.getBroadcast(this,123, Intent("geofence"), PendingIntent.FLAG_CANCEL_CURRENT)
+        val fences = mutableSetOf<String>()
         zones.forEach { zone ->
             val geofence = LocationFence.`in`(zone.lat, zone.lon, zone.radius, 5L)
-            builder.addFence("geofence ${zone.playlist.name}", geofence, pi)
+            builder.addFence("geofence-${zone.id}", geofence, pi)
+
+            Log.d("DEBUG", "fence geofence-${zone.id} built")
+            Log.d("DEBUG", "zone id: ${zone.id}")
+            fences.add("geofence-${zone.id}")
         }
+        StorageUtil(this).storeFences(fences)
         fc.updateFences(builder.build())
     }
 
@@ -156,11 +148,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onDestroy() {
         super.onDestroy()
 
+        unregisterReceiver(receiver)
+
         if (serviceBound) {
             unbindService(serviceConnection)
             //service is active
             player?.stopSelf()
         }
+    }
+
+    override fun onStop() {
+
+        super.onStop()
     }
 
 
@@ -316,6 +315,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             //Store Serializable songList to SharedPreferences
             val storage = StorageUtil(applicationContext)
             storage.storeSongs(songList!!)
+            storage.storeEnqueuedSongs(songList!!)
             storage.storeSongIndex(audioIndex)
 
             val playerIntent = Intent(this, MediaPlayerService::class.java)
