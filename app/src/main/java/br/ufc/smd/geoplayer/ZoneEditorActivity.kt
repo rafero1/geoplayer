@@ -1,17 +1,10 @@
 package br.ufc.smd.geoplayer
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
 import android.os.Bundle
 import android.view.View
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -20,6 +13,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.android.synthetic.main.activity_zone_editor.*
+import java.text.DecimalFormat
 
 class ZoneEditorActivity : AppCompatActivity() {
 
@@ -43,7 +37,16 @@ class ZoneEditorActivity : AppCompatActivity() {
         val type = object : TypeToken<Zone>() {}.type
         zone = gson.fromJson(json, type)
 
-        edit_zone_tv_location.text = zone.latLng().toString()
+        //var lat:String = "%.4f".format(zone.latLng().latitude.toString())
+        //var long:String = "%.4f".format(zone.latLng().longitude.toString())
+        val lat = zone.latLng().latitude
+        val long = zone.latLng().longitude
+
+        val df = DecimalFormat("#.####")
+
+
+        //edit_zone_tv_location.text = zone.latLng().toString()
+        edit_zone_tv_location.text = "Lat: " + df.format(lat) + ", Long: " + df.format(long)
         edit_zone_tv_name.setText(zone.playlist.name)
         edit_zone_tv_radius.setText(zone.radius.toString())
 
@@ -73,36 +76,6 @@ class ZoneEditorActivity : AppCompatActivity() {
             }))
         }
 
-        /*if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED) {
-            // Acquire a reference to the system Location Manager
-            val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val locationProvider: String = LocationManager.NETWORK_PROVIDER
-            val lastKnownLocation: Location = locationManager.getLastKnownLocation(locationProvider)
-            // Define a listener that responds to location updates
-            val locationListener = object : LocationListener {
-
-                override fun onLocationChanged(location: Location) {
-                    // Called when a new location is found by the network location provider.
-                    if (location != null)
-                        text.setText(lastKnownLocation.toString())
-
-                }
-
-                override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
-                }
-
-                override fun onProviderEnabled(provider: String) {
-                }
-
-                override fun onProviderDisabled(provider: String) {
-                }
-            }
-
-            // Register the listener with the Location Manager to receive location updates
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0f, locationListener)
-        }*/
-
         edit_zone_btn_ok.setOnClickListener { view ->
             val zones = storage.loadZones()
 
@@ -110,7 +83,7 @@ class ZoneEditorActivity : AppCompatActivity() {
 
             val updatedZone = zone
             updatedZone.radius = edit_zone_tv_radius.text.toString().toDouble()
-            updatedZone.playlist = Playlist(edit_zone_tv_name.text.toString(), songList)
+            updatedZone.playlist = PlaylistActivity(edit_zone_tv_name.text.toString(), songList)
 
             if (zones.isEmpty()) {
                 zones.add(updatedZone)

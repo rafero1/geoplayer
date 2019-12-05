@@ -133,6 +133,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 //val i = Intent(this, MainActivity::class.java)
                 //startActivity(i)
             }
+
+            R.id.nav_playlist -> {
+                val i = Intent(this, PlaylistActivity::class.java)
+                startActivity(i)
+            }
+
             R.id.nav_map -> {
                 val i = Intent(this, MapsActivity::class.java)
                 startActivity(i)
@@ -159,7 +165,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (serviceBound) {
             unbindService(serviceConnection)
             //service is active
-            player?.stopSelf()
+            //player?.stopSelf()
         }
     }
 
